@@ -1,0 +1,12 @@
+# venv Folder
+kamui/
+# Folder
+build/
+__pycache__/
+dist/
+# File
+*.pyc
+*.log
+*.exe
+*.accdb
+*.bat
