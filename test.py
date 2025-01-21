@@ -1,47 +1,24 @@
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QScrollArea, QVBoxLayout, QSizePolicy
+from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel
 
 app = QApplication([])
 
-# 建立主視窗
+# 主視窗
 window = QWidget()
-window.setWindowTitle("QScrollArea Example")
+window.resize(100, 500)
+window.setWindowTitle("固定大小的 Widget 排列於頂部")
 
-# 創建外層 QVBoxLayout
-main_layout = QVBoxLayout(window)
+# 主佈局
+layout = QVBoxLayout(window)
 
-# 建立一個包含 QHBoxLayout 的 widget1
-widget1 = QWidget()
-hbox_layout = QHBoxLayout(widget1)
-
-# 左側 widget，並添加 QVBoxLayout
-left_vbox = QVBoxLayout()
-left_vbox.addWidget(QLabel("Left - Item 1"))
-left_vbox.addWidget(QLabel("Left - Item 2"))
-left_widget = QWidget()
-left_widget.setLayout(left_vbox)
-
-# 右側 widget，並添加 QVBoxLayout
-right_vbox = QVBoxLayout()
-right_widget = QWidget()
-right_widget.setLayout(right_vbox)
-
-# 將左側和右側 widget 添加到 QHBoxLayout
-hbox_layout.addWidget(left_widget)
-hbox_layout.addWidget(right_widget)
-
-# 建立 QScrollArea 並包裹 widget1 以支援滾動
-scroll_area = QScrollArea()
-scroll_area.setWidgetResizable(True)  # 讓內容能夠自適應調整
-scroll_area.setWidget(widget1)
-
-# 把 QScrollArea 加入主佈局
-main_layout.addWidget(scroll_area)
-
-# 模擬超過顯示範圍的 100 個 widget
+# 新增 10 個固定大小的 QLabel
 for i in range(2):
-    label = QLabel(f"Item {i+1}")
-    right_vbox.addWidget(label)  # 這樣會在右側的 QVBoxLayout 中添加更多項目
+    label = QLabel(f"Label {i + 1}")
+    label.setFixedHeight(30)  # 設定固定高度
+    layout.addWidget(label)
 
-# 顯示主視窗
+# 設置 QVBoxLayout 的間距為 0
+layout.setSpacing(0)  # 元件之間無間距
+layout.addStretch(1)  # 在末尾加入伸縮，讓元件靠上排列
+
 window.show()
 app.exec()
