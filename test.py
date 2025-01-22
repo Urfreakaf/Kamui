@@ -1,24 +1,30 @@
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel
+from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QRadioButton, QPushButton
 
 app = QApplication([])
 
-# 主視窗
+# 創建主窗口
 window = QWidget()
-window.resize(100, 500)
-window.setWindowTitle("固定大小的 Widget 排列於頂部")
-
-# 主佈局
 layout = QVBoxLayout(window)
 
-# 新增 10 個固定大小的 QLabel
-for i in range(2):
-    label = QLabel(f"Label {i + 1}")
-    label.setFixedHeight(30)  # 設定固定高度
-    layout.addWidget(label)
+# 創建多個 QRadioButton
+radio_buttons = []
+for i in range(5):
+    rb = QRadioButton(f"Option {i + 1}")
+    layout.addWidget(rb)
+    radio_buttons.append(rb)
 
-# 設置 QVBoxLayout 的間距為 0
-layout.setSpacing(0)  # 元件之間無間距
-layout.addStretch(1)  # 在末尾加入伸縮，讓元件靠上排列
+# 創建 QPushButton
+button = QPushButton("Check Selection")
+layout.addWidget(button)
+
+# 定義按鈕點擊時的功能
+def on_button_clicked():
+    for rb in radio_buttons:
+        if rb.isChecked():
+            print(rb.text())
+            break  # 找到後可以中斷迴圈
+
+button.clicked.connect(on_button_clicked)
 
 window.show()
 app.exec()

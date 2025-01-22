@@ -7,6 +7,5 @@ dist/
 # File
 *.pyc
 *.log
-*.exe
 *.accdb
 *.bat
