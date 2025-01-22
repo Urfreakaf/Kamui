@@ -82,13 +82,14 @@ class MainWindow(QScrollArea):
     # Add option in food page
     # Count how many dishes：food_count_dict：{Type:{Meal:[button, price, count]}}
         self.food_count_dict = {}
+        self.food_add_list = []
         food_label_font = QFont()
         food_label_font.setPixelSize(18)
         food_option_font = QFont()
         food_option_font.setPixelSize(14)
         food_button = QPushButton(self.food_tab)
         food_button.setText("輸入")
-        food_button.clicked.connect(lambda: self.add_food_option(self.food_count_dict, self.ppl_layout))
+        food_button.clicked.connect(lambda: self.add_food_option(self.food_count_dict, self.food_add_list,self.ppl_layout))
         food_button.setGeometry(450, 20, 100, 40)
         food_layout = QVBoxLayout(self.food_tab)
         food_block = QWidget()
@@ -152,7 +153,6 @@ class MainWindow(QScrollArea):
                     food_count.setText(str(1))
                     food_count.setAlignment(Qt.AlignCenter)
                     food_count.setGeometry(205, 6, 25, 29)
-                    self.food_layout1.addWidget(food_widget)
                     self.food_layout2.addWidget(food_widget)
                     self.food_count_dict[t][option] = [food_button, price, food_count]
             else:
@@ -176,8 +176,15 @@ class MainWindow(QScrollArea):
                     food_count.setGeometry(205, 6, 25, 29)
                     self.food_layout1.addWidget(food_widget)
                     self.food_count_dict[t][option] = [food_button, price, food_count]
-            self.food_frant.addWidget(self.food_left)
-            self.food_frant.addWidget(self.food_right)
+        food_add_button = QPushButton()
+        food_add_button.setFixedSize(30, 30)
+        food_add_button.setIcon(self.add_icon)
+        food_add_button.clicked.connect(self.add_food_row)
+        self.food_layout1.addWidget(food_add_button)
+        self.food_frant.addWidget(self.food_left)
+        self.food_frant.setAlignment(self.food_left, Qt.AlignTop)
+        self.food_frant.addWidget(self.food_right)
+        self.food_frant.setAlignment(self.food_right, Qt.AlignTop)
 
     # Drink
     # Count how many drinks：drink_count_list：[[drink_name, drink_price, drink_count]]
@@ -189,10 +196,12 @@ class MainWindow(QScrollArea):
         drink_block.setFixedSize(500, 65)
         self.drink_frant.addWidget(drink_block)
         drink_button = QPushButton(self.drink_tab)
+        drink_button.clicked.connect(lambda:self.add_drink_option(self.drink_count_list, self.ppl_layout))
         drink_button.setText("輸入")
         drink_button.setGeometry(450, 20, 100, 40)
         drink_add_button = QPushButton(self.drink_tab)
         drink_add_button.setIcon(self.add_icon)
+        drink_add_button.clicked.connect(self.add_drink_row)
         drink_add_button.setGeometry(488, 110, 30, 30)
         drink_col = QLabel("        品名\t\t\t\t         金額\t             數量")
         drink_col.setFixedSize(550, 20)
@@ -240,6 +249,7 @@ class MainWindow(QScrollArea):
             pay_box.setGeometry(350, 10, 150, 40)
             pay_box.setFont(name_font)
             f_option_scroll = QScrollArea(ppl_widget)
+            f_option_scroll.setStyleSheet("border:none")
             f_option_scroll.setGeometry(10, 60, 575, 490)
             f_option_scroll.setWidgetResizable(True)
             f_option_widget = QWidget()
@@ -248,6 +258,7 @@ class MainWindow(QScrollArea):
             f_label.setFont(name_font)
             f_label.setFixedSize(400, 40)
             d_option_scroll = QScrollArea(ppl_widget)
+            d_option_scroll.setStyleSheet("border:none")
             d_option_scroll.setGeometry(10, 550, 575, 180)
             d_option_scroll.setWidgetResizable(True)
             d_option_widget = QWidget()
@@ -264,8 +275,54 @@ class MainWindow(QScrollArea):
             self.ppl_pay[ppl] = pay_box
             self.ppl_layout[ppl] = [f_option_layout, d_option_layout]
 
-    def add_food_option(self, food_dict, ppl_layout):
-        self.add_class.food_add(food_dict, ppl_layout)
+    def add_food_row(self):
+        food_option_font = QFont()
+        food_option_font.setPixelSize(14)
+        food_widget = QWidget()
+        food_widget.setFixedSize(250, 40)
+        food_button = QRadioButton(food_widget)
+        food_button.setChecked(True)
+        food_button.setFont(food_option_font)
+        food_button.setGeometry(13, 0, 17, 40)
+        food_name = QTextEdit(food_widget)
+        food_name.setGeometry(32, 6, 108, 29)
+        food_price = QTextEdit(food_widget)
+        food_price.setGeometry(153, 6 , 38, 29)
+        food_count = QTextEdit(food_widget)
+        food_count.setText(str(1))
+        food_count.setAlignment(Qt.AlignCenter)
+        food_count.setGeometry(205, 6, 25, 29)
+        self.food_layout1.addWidget(food_widget)
+        self.food_add_list.append([food_button, [food_name, food_price, food_count]])
+
+
+    def add_drink_row(self):
+        drink_font = QFont()
+        drink_font.setPixelSize(18)
+        drink_widget = QWidget()
+        drink_widget.setFixedSize(450, 80)
+        drink_name = QTextEdit(drink_widget)
+        drink_name.setGeometry(20, 15, 220, 40)
+        drink_name.setFont(drink_font)
+        drink_name.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        drink_price = QTextEdit(drink_widget)
+        drink_price.setGeometry(260, 15, 80, 40)
+        drink_price.setFont(drink_font)
+        drink_price.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        drink_count = QTextEdit(drink_widget)
+        drink_count.setText(str(1))
+        drink_count.setFont(drink_font)
+        drink_count.setAlignment(Qt.AlignCenter)
+        drink_count.setGeometry(360, 15, 40, 40)
+        self.drink_frant.addWidget(drink_widget, 0)
+        self.drink_count_list.append([drink_name, drink_price, drink_count])
+
+
+    def add_food_option(self, food_dict, add_list, ppl_layout):
+        self.add_class.food_add(food_dict, add_list, ppl_layout)
+
+    def add_drink_option(self, drink_list, ppl_layout):
+        self.add_class.drink_add(drink_list, ppl_layout)
 
 
 if __name__ == "__main__":
