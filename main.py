@@ -93,7 +93,7 @@ class MainWindow(QScrollArea):
         food_button.setGeometry(450, 20, 100, 40)
         food_layout = QVBoxLayout(self.food_tab)
         food_block = QWidget()
-        food_block.setFixedSize(400, 60)
+        food_block.setFixedSize(10, 60)
         food_menu = QWidget()
         food_layout.addWidget(food_block)
         food_layout.addWidget(food_menu)
@@ -113,11 +113,11 @@ class MainWindow(QScrollArea):
         food_dict = food.read_excel()
         food_types = food_dict.keys()
         price_label_1 = QLabel(self.food_left)
-        price_label_1.setGeometry(170, -10, 40, 40)
+        price_label_1.setGeometry(165, -10, 40, 40)
         price_label_1.setText("價格")
         price_label_1.setFont(food_option_font)
         price_label_2 = QLabel(self.food_right)
-        price_label_2.setGeometry(170, -10, 40, 40)
+        price_label_2.setGeometry(165, -10, 40, 40)
         price_label_2.setText("價格")
         price_label_2.setFont(food_option_font)
         count_label_1 = QLabel(self.food_left)
@@ -193,7 +193,7 @@ class MainWindow(QScrollArea):
         drink_font.setPixelSize(18)
         self.drink_frant = QVBoxLayout(self.drink_tab)
         drink_block = QWidget()
-        drink_block.setFixedSize(500, 65)
+        drink_block.setFixedSize(10, 65)
         self.drink_frant.addWidget(drink_block)
         drink_button = QPushButton(self.drink_tab)
         drink_button.clicked.connect(lambda:self.add_drink_option(self.drink_count_list, self.ppl_layout))
@@ -248,32 +248,43 @@ class MainWindow(QScrollArea):
             pay_box = QTextEdit(ppl_widget)
             pay_box.setGeometry(350, 10, 150, 40)
             pay_box.setFont(name_font)
+            f_label = QLabel(ppl_widget)
+            f_label.setText("食事")
+            f_label.setFont(name_font)
+            f_label.setGeometry(10, 60, 400, 30)
             f_option_scroll = QScrollArea(ppl_widget)
             f_option_scroll.setStyleSheet("border:none")
-            f_option_scroll.setGeometry(10, 60, 575, 490)
+            f_option_scroll.setGeometry(10, 100, 575, 450)
             f_option_scroll.setWidgetResizable(True)
             f_option_widget = QWidget()
             f_option_scroll.setWidget(f_option_widget)
-            f_label = QLabel("食事")
-            f_label.setFont(name_font)
-            f_label.setFixedSize(400, 40)
+            d_label = QLabel(ppl_widget)
+            d_label.setText("酒水")
+            d_label.setFont(name_font)
+            d_label.setGeometry(10, 560, 400, 30)
             d_option_scroll = QScrollArea(ppl_widget)
             d_option_scroll.setStyleSheet("border:none")
-            d_option_scroll.setGeometry(10, 550, 575, 180)
+            d_option_scroll.setGeometry(10, 600, 575, 130)
             d_option_scroll.setWidgetResizable(True)
             d_option_widget = QWidget()
             d_option_scroll.setWidget(d_option_widget)
-            d_label = QLabel("酒水")
-            d_label.setFont(name_font)
-            d_label.setFixedSize(400, 40)
             f_option_layout = QVBoxLayout(f_option_widget)
-            f_option_layout.addWidget(f_label)
             f_option_layout.setSizeConstraint(QVBoxLayout.SetMinAndMaxSize)
             d_option_layout = QVBoxLayout(d_option_widget)
-            d_option_layout.addWidget(d_label)
             d_option_layout.setSizeConstraint(QVBoxLayout.SetMinAndMaxSize)
             self.ppl_pay[ppl] = pay_box
             self.ppl_layout[ppl] = [f_option_layout, d_option_layout]
+
+    # Count_Hoe_Much
+        self.money_frant = QVBoxLayout(self.money_tab)
+        money_block = QWidget()
+        money_block.setFixedSize(10, 65)
+        self.money_frant.addWidget(money_block)
+        money_button = QPushButton(self.money_tab)
+        money_button.clicked.connect(lambda:self.count_final(self.ppl_pay, self.money_frant))
+        money_button.setText("計算")
+        money_button.setGeometry(450, 20, 100, 40)
+        
 
     def add_food_row(self):
         food_option_font = QFont()
@@ -317,13 +328,14 @@ class MainWindow(QScrollArea):
         self.drink_frant.addWidget(drink_widget, 0)
         self.drink_count_list.append([drink_name, drink_price, drink_count])
 
-
     def add_food_option(self, food_dict, add_list, ppl_layout):
         self.add_class.food_add(food_dict, add_list, ppl_layout)
 
     def add_drink_option(self, drink_list, ppl_layout):
         self.add_class.drink_add(drink_list, ppl_layout)
 
+    def count_final(self, ppl_pay, layout):
+        self.add_class.count(ppl_pay, layout)
 
 if __name__ == "__main__":
     import sys
