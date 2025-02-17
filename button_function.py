@@ -147,7 +147,6 @@ class Add:
                     if count_dict["f"][m]["ppl"][pp].isChecked():
                         eat_count += 1
                 m_per_ppl = (f_price * f_c) / eat_count
-                m_per_ppl = int(m_per_ppl) + (m_per_ppl > int(m_per_ppl))
                 for pp in ppl:
                     if count_dict["f"][m]["ppl"][pp].isChecked():
                         money_dict[pp].append(m_per_ppl)
@@ -160,7 +159,6 @@ class Add:
                     if count_dict["d"][d]["ppl"][pp].isChecked():
                         drink_count += 1
                 m_per_ppl = (d_price * d_c) / drink_count
-                m_per_ppl = int(m_per_ppl) + (m_per_ppl > int(m_per_ppl))
                 for pp in ppl:
                     if count_dict["d"][d]["ppl"][pp].isChecked():
                         money_dict[pp].append(m_per_ppl)
@@ -175,6 +173,7 @@ class Add:
         for p in ppl:
             money_list = dict[p]
             money = sum(money_list)
+            money = int(money) + (money > int(money))
             money_text = QLabel(p)
             money_text.setFixedSize(400, 40)
             money_text.setText(f"{p}：{str(money)}")
