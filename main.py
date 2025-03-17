@@ -1,5 +1,5 @@
-from PySide6.QtWidgets import QApplication, QScrollArea, QTabWidget, QWidget, QVBoxLayout, QLabel, QTextEdit, QHBoxLayout, QRadioButton, QPushButton
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication, QScrollArea, QTabWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QRadioButton, QPushButton, QLineEdit, QCompleter
+from PySide6.QtCore import Qt, QObject
 from PySide6.QtGui import QFont, QIcon, QPixmap, QImage
 import base64
 from PIL import Image
@@ -7,6 +7,7 @@ from io import BytesIO
 from food import Food
 from icon.add import add_image_base64
 from button_function import Add
+from functools import partial
 
 class MainWindow(QScrollArea):
     def __init__(self):
@@ -83,10 +84,18 @@ class MainWindow(QScrollArea):
     # Count how many dishes：food_count_dict：{Type:{Meal:[button, price, count]}}
         self.food_count_dict = {}
         self.food_add_list = []
+        self.food_button_dict = {}
         food_label_font = QFont()
         food_label_font.setPixelSize(18)
         food_option_font = QFont()
         food_option_font.setPixelSize(14)
+        self.food_searchbox = QLineEdit(self.food_tab)
+        self.food_searchbox.setGeometry(30, 20, 200, 40)
+        self.food_searchbox.setPlaceholderText("搜尋")
+        self.food_searchbox.setFont(food_label_font)
+        self.food_search_button = QPushButton("搜尋", self.food_tab)
+        self.food_search_button.setGeometry(250, 25, 50, 30)
+        self.food_search_button.clicked.connect(self.food_search_option)
         food_button = QPushButton(self.food_tab)
         food_button.setText("輸入")
         food_button.clicked.connect(lambda: self.add_food_option(self.food_count_dict, self.food_add_list,self.ppl_layout))
@@ -106,8 +115,8 @@ class MainWindow(QScrollArea):
         self.food_layout2 = QVBoxLayout()
         self.food_layout2.setSizeConstraint(QVBoxLayout.SetMinAndMaxSize)
         self.food_right.setLayout(self.food_layout2)
-        self.food_right.resize(250, 800)
         self.food_left.resize(250, 800)
+        self.food_right.resize(250, 800)
         menu_path = r"data\食事.xlsx"
         food = Food(menu_path)
         food_dict = food.read_excel()
@@ -149,12 +158,13 @@ class MainWindow(QScrollArea):
                     price = food_option_dict[option]
                     food_price.setText(str(price))
                     food_price.setGeometry(160, 0 , 40, 40)
-                    food_count = QTextEdit(food_widget)
+                    food_count = QLineEdit(food_widget)
                     food_count.setText(str(1))
                     food_count.setAlignment(Qt.AlignCenter)
                     food_count.setGeometry(205, 6, 25, 29)
                     self.food_layout2.addWidget(food_widget)
                     self.food_count_dict[t][option] = [food_button, price, food_count]
+                    self.food_button_dict[food_button.text()] = food_widget
             else:
                 self.food_layout1.addWidget(type_label)
                 type_label.setText(t)
@@ -170,12 +180,17 @@ class MainWindow(QScrollArea):
                     price = food_option_dict[option]
                     food_price.setText(str(price))
                     food_price.setGeometry(160, 0 , 40, 40)
-                    food_count = QTextEdit(food_widget)
+                    food_count = QLineEdit(food_widget)
                     food_count.setText(str(1))
                     food_count.setAlignment(Qt.AlignCenter)
                     food_count.setGeometry(205, 6, 25, 29)
                     self.food_layout1.addWidget(food_widget)
                     self.food_count_dict[t][option] = [food_button, price, food_count]
+                    self.food_button_dict[food_button.text()] = food_widget
+        self.food_comp = QCompleter(list(self.food_button_dict.keys()), self)
+        self.food_comp.setFilterMode(Qt.MatchContains)
+        self.food_comp.popup().setStyleSheet("font-size: 16px;")
+        self.food_searchbox.setCompleter(self.food_comp)
         food_add_button = QPushButton()
         food_add_button.setFixedSize(30, 30)
         food_add_button.setIcon(self.add_icon)
@@ -208,15 +223,15 @@ class MainWindow(QScrollArea):
         self.drink_frant.addWidget(drink_col)
         drink_widget = QWidget()
         drink_widget.setFixedSize(450, 80)
-        drink_name = QTextEdit(drink_widget)
+        drink_name = QLineEdit(drink_widget)
         drink_name.setGeometry(20, 15, 220, 40)
         drink_name.setFont(drink_font)
         drink_name.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        drink_price = QTextEdit(drink_widget)
+        drink_price = QLineEdit(drink_widget)
         drink_price.setGeometry(260, 15, 80, 40)
         drink_price.setFont(drink_font)
         drink_price.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        drink_count = QTextEdit(drink_widget)
+        drink_count = QLineEdit(drink_widget)
         drink_count.setText(str(1))
         drink_count.setFont(drink_font)
         drink_count.setAlignment(Qt.AlignCenter)
@@ -237,7 +252,7 @@ class MainWindow(QScrollArea):
         attend_list = self.tab_dict.keys()
         for ppl in attend_list:
             ppl_widget = self.tab_dict[ppl]
-            name_text = QTextEdit(ppl_widget)
+            name_text = QLineEdit(ppl_widget)
             name_text.setText(ppl)
             name_text.setGeometry(20, 10, 150, 40)
             name_text.setFont(name_font)
@@ -245,13 +260,15 @@ class MainWindow(QScrollArea):
             pay_label.setText("出的錢")
             pay_label.setGeometry(300, 20, 40, 20)
             pay_label.setFont(ppl_font)
-            pay_box = QTextEdit(ppl_widget)
+            pay_box = QLineEdit(ppl_widget)
             pay_box.setGeometry(350, 10, 150, 40)
             pay_box.setFont(name_font)
             f_label = QLabel(ppl_widget)
             f_label.setText("食事")
             f_label.setFont(name_font)
             f_label.setGeometry(10, 60, 400, 30)
+            selected_all = QPushButton("全選", ppl_widget)
+            selected_all.setGeometry(130, 65, 40, 20)
             f_option_scroll = QScrollArea(ppl_widget)
             f_option_scroll.setStyleSheet("border:none")
             f_option_scroll.setGeometry(10, 100, 575, 450)
@@ -274,8 +291,9 @@ class MainWindow(QScrollArea):
             d_option_layout.setSizeConstraint(QVBoxLayout.SetMinAndMaxSize)
             self.ppl_pay[ppl] = pay_box
             self.ppl_layout[ppl] = [f_option_layout, d_option_layout]
+            selected_all.clicked.connect(partial(self.selected_all, f_option_layout))
 
-    # Count_Hoe_Much
+    # Count_How_Much
         self.money_frant = QVBoxLayout(self.money_tab)
         money_block = QWidget()
         money_block.setFixedSize(10, 65)
@@ -284,7 +302,20 @@ class MainWindow(QScrollArea):
         money_button.clicked.connect(lambda:self.count_final(self.ppl_pay, self.money_frant))
         money_button.setText("計算")
         money_button.setGeometry(450, 20, 100, 40)
-        
+
+    def food_search_option(self):
+        keyword = self.food_searchbox.text().strip()
+        target = self.food_button_dict[keyword]
+        parent_widget = target.parentWidget()
+        menu_widget = parent_widget.parentWidget()
+        button_y = target.y()
+        parent_y = parent_widget.y()
+        menu__y = menu_widget.y()
+        target_y = menu__y + parent_y + button_y
+        self.windows.widget(0).verticalScrollBar().setValue(target_y - 40)
+
+        highlight = HighlightEffect(self.food_tab, target)
+        highlight.changeStyle()
 
     def add_food_row(self):
         food_option_font = QFont()
@@ -292,35 +323,33 @@ class MainWindow(QScrollArea):
         food_widget = QWidget()
         food_widget.setFixedSize(250, 40)
         food_button = QRadioButton(food_widget)
-        food_button.setChecked(True)
         food_button.setFont(food_option_font)
         food_button.setGeometry(13, 0, 17, 40)
-        food_name = QTextEdit(food_widget)
+        food_name = QLineEdit(food_widget)
         food_name.setGeometry(32, 6, 108, 29)
-        food_price = QTextEdit(food_widget)
+        food_price = QLineEdit(food_widget)
         food_price.setGeometry(153, 6 , 38, 29)
-        food_count = QTextEdit(food_widget)
+        food_count = QLineEdit(food_widget)
         food_count.setText(str(1))
         food_count.setAlignment(Qt.AlignCenter)
         food_count.setGeometry(205, 6, 25, 29)
         self.food_layout1.addWidget(food_widget)
         self.food_add_list.append([food_button, [food_name, food_price, food_count]])
 
-
     def add_drink_row(self):
         drink_font = QFont()
         drink_font.setPixelSize(18)
         drink_widget = QWidget()
         drink_widget.setFixedSize(450, 80)
-        drink_name = QTextEdit(drink_widget)
+        drink_name = QLineEdit(drink_widget)
         drink_name.setGeometry(20, 15, 220, 40)
         drink_name.setFont(drink_font)
         drink_name.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        drink_price = QTextEdit(drink_widget)
+        drink_price = QLineEdit(drink_widget)
         drink_price.setGeometry(260, 15, 80, 40)
         drink_price.setFont(drink_font)
         drink_price.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        drink_count = QTextEdit(drink_widget)
+        drink_count = QLineEdit(drink_widget)
         drink_count.setText(str(1))
         drink_count.setFont(drink_font)
         drink_count.setAlignment(Qt.AlignCenter)
@@ -334,8 +363,49 @@ class MainWindow(QScrollArea):
     def add_drink_option(self, drink_list, ppl_layout):
         self.add_class.drink_add(drink_list, ppl_layout)
 
+    def selected_all(self, layout):
+        for index in range(layout.count()):
+            item = layout.itemAt(index)  # 取得該索引位置的部件
+            widget = item.widget()  # 取得部件（如 QWidget
+            if widget:
+                radio_button = widget.findChild(QRadioButton)  # 查找 QWidget 內的 QRadioButton
+                if radio_button:
+                    radio_button.setChecked(True)
+
     def count_final(self, ppl_pay, layout):
         self.add_class.count(ppl_pay, layout)
+
+class HighlightEffect(QObject):
+    def __init__(self, main, widget):
+        super().__init__(main)
+        self.main = main
+        self.widget = widget
+        self.default_style = self.widget.styleSheet()
+        self.triggered_style = '''
+                QWidget { background-color: gray; } 
+                QRadioButton::indicator { 
+                    border: 1px solid gray;
+                    border-radius: 7px;
+                    background-color: white; 
+                    } 
+                QRadioButton{color: white; }
+                QLabel { color: white; } 
+                QLineEdit { background-color: white; }
+            '''
+        # 設置事件監聽器，點擊後恢復原狀
+        self.main.installEventFilter(self)
+
+    def changeStyle(self):
+        # 改變樣式為觸發效果
+        self.widget.setStyleSheet(self.triggered_style)
+
+    def eventFilter(self, obj, event):
+        print(123)
+        # 點擊後恢復樣式
+        self.widget.setStyleSheet(self.default_style)
+        event.accept()
+
+        return super().eventFilter(obj, event)
 
 if __name__ == "__main__":
     import sys
