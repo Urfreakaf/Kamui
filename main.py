@@ -93,6 +93,7 @@ class MainWindow(QScrollArea):
         self.food_searchbox.setGeometry(30, 20, 200, 40)
         self.food_searchbox.setPlaceholderText("搜尋")
         self.food_searchbox.setFont(food_label_font)
+        self.food_searchbox.setShortcut("Return")
         self.food_search_button = QPushButton("搜尋", self.food_tab)
         self.food_search_button.setGeometry(250, 25, 50, 30)
         self.food_search_button.clicked.connect(self.food_search_option)
