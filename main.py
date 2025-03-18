@@ -1,5 +1,5 @@
-from PySide6.QtWidgets import QApplication, QScrollArea, QTabWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QRadioButton, QPushButton, QLineEdit, QCompleter
-from PySide6.QtCore import Qt, QObject
+from PySide6.QtWidgets import QApplication, QScrollArea, QTabWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QRadioButton, QPushButton, QLineEdit, QCompleter, QFrame
+from PySide6.QtCore import Qt, QObject, QEvent, QTimer
 from PySide6.QtGui import QFont, QIcon, QPixmap, QImage
 import base64
 from PIL import Image
@@ -266,22 +266,34 @@ class MainWindow(QScrollArea):
             f_label = QLabel(ppl_widget)
             f_label.setText("食事")
             f_label.setFont(name_font)
-            f_label.setGeometry(10, 60, 400, 30)
+            f_label.setGeometry(10, 60, 200, 30)
             selected_all = QPushButton("全選", ppl_widget)
             selected_all.setGeometry(130, 65, 40, 20)
-            f_option_scroll = QScrollArea(ppl_widget)
+            scroll_area = QWidget(ppl_widget)
+            scroll_area.setGeometry(10, 100, 575, 630)
+            scroll_layout = QHBoxLayout(scroll_area)
+            #f_option_scroll = QScrollArea(ppl_widget)
+            f_option_scroll = QScrollArea()
+            scroll_layout.addWidget(f_option_scroll)
             f_option_scroll.setStyleSheet("border:none")
-            f_option_scroll.setGeometry(10, 100, 575, 450)
+            #f_option_scroll.setGeometry(10, 100, 575, 450)
             f_option_scroll.setWidgetResizable(True)
             f_option_widget = QWidget()
             f_option_scroll.setWidget(f_option_widget)
+            '''sep_line = QFrame()
+            sep_line.setFrameShape(QFrame.VLine)
+            sep_line.setFrameShadow(QFrame.Sunken)
+            sep_line.setFixedHeight(570)
+            scroll_layout.addWidget(sep_line)'''
             d_label = QLabel(ppl_widget)
             d_label.setText("酒水")
             d_label.setFont(name_font)
-            d_label.setGeometry(10, 560, 400, 30)
-            d_option_scroll = QScrollArea(ppl_widget)
+            d_label.setGeometry(290, 60, 200, 30)
+            #d_option_scroll = QScrollArea(ppl_widget)
+            d_option_scroll = QScrollArea()
+            scroll_layout.addWidget(d_option_scroll)
             d_option_scroll.setStyleSheet("border:none")
-            d_option_scroll.setGeometry(10, 600, 575, 130)
+            #d_option_scroll.setGeometry(10, 600, 575, 130)
             d_option_scroll.setWidgetResizable(True)
             d_option_widget = QWidget()
             d_option_scroll.setWidget(d_option_widget)
@@ -294,28 +306,61 @@ class MainWindow(QScrollArea):
             selected_all.clicked.connect(partial(self.selected_all, f_option_layout))
 
     # Count_How_Much
-        self.money_frant = QVBoxLayout(self.money_tab)
-        money_block = QWidget()
-        money_block.setFixedSize(10, 65)
-        self.money_frant.addWidget(money_block)
+        money_area = QWidget(self.money_tab)
+        money_area.setGeometry(0, 60, 600, 760)
+        self.money_frant = QVBoxLayout(money_area)
+        self.money_frant.setSizeConstraint(QVBoxLayout.SetMinAndMaxSize)
+        discount_label = QLabel("折扣", self.money_tab)
+        discount_label.setGeometry(10, 25, 40, 30)
+        discount_box = QLineEdit(self.money_tab)
+        discount_box.setText(str(0))
+        discount_box.setGeometry(80, 25, 100, 30)
         money_button = QPushButton(self.money_tab)
-        money_button.clicked.connect(lambda:self.count_final(self.ppl_pay, self.money_frant))
+        money_button.clicked.connect(lambda:self.count_final(self.ppl_pay, discount_box.text(), self.money_frant))
         money_button.setText("計算")
         money_button.setGeometry(450, 20, 100, 40)
 
     def food_search_option(self):
         keyword = self.food_searchbox.text().strip()
-        target = self.food_button_dict[keyword]
-        parent_widget = target.parentWidget()
-        menu_widget = parent_widget.parentWidget()
-        button_y = target.y()
-        parent_y = parent_widget.y()
-        menu__y = menu_widget.y()
-        target_y = menu__y + parent_y + button_y
-        self.windows.widget(0).verticalScrollBar().setValue(target_y - 40)
+        if keyword in self.food_button_dict.keys():
+            target = self.food_button_dict[keyword]
+            parent_widget = target.parentWidget()
+            menu_widget = parent_widget.parentWidget()
+            button_y = target.y()
+            parent_y = parent_widget.y()
+            menu__y = menu_widget.y()
+            target_y = menu__y + parent_y + button_y
+            self.windows.widget(0).verticalScrollBar().setValue(target_y - 40)
 
-        highlight = HighlightEffect(self.food_tab, target)
-        highlight.changeStyle()
+            self.highlight(target)
+
+    def highlight(self, widget):
+        default_style = widget.styleSheet()
+        triggered_style = '''
+                QWidget { background-color: gray; } 
+                QRadioButton::indicator { 
+                    border: 1px solid gray;
+                    border-radius: 7px;
+                    background-color: white; 
+                    } 
+                QRadioButton{color: white; }
+                QLabel { color: white; } 
+                QLineEdit { background-color: white; }
+            '''
+        def toggle_border():
+            if widget.styleSheet() == triggered_style:
+                widget.setStyleSheet(default_style)
+            else:
+                widget.setStyleSheet(triggered_style)
+
+        widget.setStyleSheet(triggered_style)
+
+        timer = QTimer()
+        timer.timeout.connect(toggle_border)
+        timer.start(500)
+
+        # 2 秒後停止閃爍並恢復原狀
+        QTimer.singleShot(3000, lambda: (timer.stop(), widget.setStyleSheet(default_style)))
 
     def add_food_row(self):
         food_option_font = QFont()
@@ -372,40 +417,8 @@ class MainWindow(QScrollArea):
                 if radio_button:
                     radio_button.setChecked(True)
 
-    def count_final(self, ppl_pay, layout):
-        self.add_class.count(ppl_pay, layout)
-
-class HighlightEffect(QObject):
-    def __init__(self, main, widget):
-        super().__init__(main)
-        self.main = main
-        self.widget = widget
-        self.default_style = self.widget.styleSheet()
-        self.triggered_style = '''
-                QWidget { background-color: gray; } 
-                QRadioButton::indicator { 
-                    border: 1px solid gray;
-                    border-radius: 7px;
-                    background-color: white; 
-                    } 
-                QRadioButton{color: white; }
-                QLabel { color: white; } 
-                QLineEdit { background-color: white; }
-            '''
-        # 設置事件監聽器，點擊後恢復原狀
-        self.main.installEventFilter(self)
-
-    def changeStyle(self):
-        # 改變樣式為觸發效果
-        self.widget.setStyleSheet(self.triggered_style)
-
-    def eventFilter(self, obj, event):
-        print(123)
-        # 點擊後恢復樣式
-        self.widget.setStyleSheet(self.default_style)
-        event.accept()
-
-        return super().eventFilter(obj, event)
+    def count_final(self, ppl_pay, discount, layout):
+        self.add_class.count(ppl_pay, discount, layout)
 
 if __name__ == "__main__":
     import sys

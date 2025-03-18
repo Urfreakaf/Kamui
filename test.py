@@ -1,69 +1,40 @@
-from PySide6.QtCore import QObject, QEvent
-from PySide6.QtWidgets import QMainWindow, QPushButton, QLineEdit, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout
+from PySide6.QtCore import QTimer
 
-class HighlightEffect(QObject):
-    def __init__(self, main, widget):
-        super().__init__(main)  # 呼叫父類的初始化
-        self.main = main
-        self.widget = widget
-        self.default_style = self.widget.styleSheet()
-        self.triggered_style = '''
-            QWidget { background-color: gray; }
-            QRadioButton::indicator {
-                border: 1px solid gray;
-                border-radius: 7px;
-                background-color: white;
-            }
-            QRadioButton { color: white; }
-            QLabel { color: white; }
-            QLineEdit { background-color: white; }
-        '''
-        self.main.installEventFilter(self)  # 使用 eventFilter
+app = QApplication([])
 
-    def changeStyle(self):
-        # 改變樣式為觸發效果
-        self.widget.setStyleSheet(self.triggered_style)
+# 建立主視窗
+main_widget = QWidget()
+layout = QVBoxLayout(main_widget)
 
-    def eventFilter(self, obj, event):
-        # 監控各種事件
-        if event.type() == QEvent.MouseButtonPress:
-            # 點擊事件
-            print("Mouse button pressed!")
-            self.widget.setStyleSheet(self.triggered_style)  # 改變樣式
-            return True  # 事件被處理，返回 True 來阻止進一步處理
+# 建立目標 widget
+target_widget = QPushButton("目標 Widget")
+target_widget.setObjectName("target")  # 設定 ObjectName，讓樣式只影響此 widget
+layout.addWidget(target_widget)
 
-        if event.type() == QEvent.KeyPress:
-            # 鍵盤按鍵事件
-            print("Key pressed!")
-            # 這裡可以加入你需要的行為
-            return True
+def highlight_widget(widget):
+    """讓 widget 以虛線邊框閃爍 2 秒 (不影響子部件)"""
+    original_style = widget.styleSheet()  # 儲存原始樣式
+    highlight_style = "#target { border: 2px dashed red; }"  # 只影響 objectName 為 target 的部件
 
-        if event.type() == QEvent.FocusIn:
-            # 焦點進入事件
-            print("Focus entered!")
-            return True
-        return super().eventFilter(obj, event)
+    def toggle_border():
+        """切換邊框樣式"""
+        if widget.styleSheet() == highlight_style:
+            widget.setStyleSheet(original_style)
+        else:
+            widget.setStyleSheet(highlight_style)
 
-# 測試用例
-if __name__ == "__main__":
-    from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QLineEdit, QVBoxLayout, QWidget
-    
-    app = QApplication([])
-    main_window = QMainWindow()
-    
-    # 設置主界面
-    main_widget = QWidget()
-    layout = QVBoxLayout(main_widget)
-    button = QPushButton("Click me!")
-    line_edit = QLineEdit("Type something...")
-    
-    layout.addWidget(button)
-    layout.addWidget(line_edit)
-    
-    main_window.setCentralWidget(main_widget)
-    main_window.show()
-    
-    # 初始化高亮效果
-    highlight_effect = HighlightEffect(main_window, button)  # 可以將任意widget傳入這裡
-    
-    app.exec()
+    timer = QTimer()
+    timer.timeout.connect(toggle_border)
+    timer.start(300)  # 每 300ms 切換一次
+
+    # 2 秒後停止閃爍並恢復原狀
+    QTimer.singleShot(2000, lambda: (timer.stop(), widget.setStyleSheet(original_style)))
+
+# 測試按鈕，按下後讓 target_widget 閃爍
+test_button = QPushButton("閃爍目標 Widget")
+test_button.clicked.connect(lambda: highlight_widget(target_widget))
+layout.addWidget(test_button)
+
+main_widget.show()
+app.exec()

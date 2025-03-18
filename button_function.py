@@ -25,15 +25,15 @@ class Add:
                 for meal in meals:
                     meal_info = meal_dict[meal]
                     if meal_info[0].isChecked():
-                        f_option_dict[t][meal] = [meal_info[1], int(meal_info[2].toPlainText())]
+                        f_option_dict[t][meal] = [meal_info[1], int(meal_info[2].text())]
             if add_list:
                 for row_list in add_list:
                     if row_list[0].isChecked():
-                        all_filled = all(edit.toPlainText().strip() != "" for edit in row_list[1])
+                        all_filled = all(edit.text().strip() != "" for edit in row_list[1])
                         if all_filled:
-                            name = row_list[1][0].toPlainText()
-                            price = row_list[1][1].toPlainText()
-                            count = row_list[1][2].toPlainText()
+                            name = row_list[1][0].text()
+                            price = row_list[1][1].text()
+                            count = row_list[1][2].text()
                             if "手動輸入" not in f_option_dict.keys():
                                 f_option_dict["手動輸入"] = {}
                             f_option_dict["手動輸入"][name] = [price, int(count)]
@@ -47,11 +47,11 @@ class Add:
         try:
             if drink_list:
                 for row_list in drink_list:
-                    all_filled = all(edit.toPlainText().strip() != "" for edit in row_list)
+                    all_filled = all(edit.text().strip() != "" for edit in row_list)
                     if all_filled:
-                        name = row_list[0].toPlainText()
-                        price = row_list[1].toPlainText()
-                        count = row_list[2].toPlainText()
+                        name = row_list[0].text()
+                        price = row_list[1].text()
+                        count = row_list[2].text()
                         d_option_list.append([name, int(price), int(count)])
             if d_option_list:
                 self.add_option("d", ppl_layout, d_option_list)
@@ -59,7 +59,6 @@ class Add:
             self.alert.alert_text("值輸入錯誤")
             return
 
-    
     def add_option(self, layout_type, ppl_layout, data):
         global count_dict
         ppl_list = ppl_layout.keys()
@@ -79,23 +78,23 @@ class Add:
                         type_label = QLabel()
                         type_label.setText(t)
                         type_label.setFont(t_font)
-                        type_label.setFixedSize(300, 40)
+                        type_label.setFixedSize(235, 40)
                         f_layout.addWidget(type_label, 0)
                         for m in meals:
                             m_info = data[t][m]
                             m_widget = QWidget()
-                            m_widget.setFixedSize(300, 40)
+                            m_widget.setFixedSize(235, 40)
                             m_radio = QRadioButton(m_widget)
                             m_radio.setChecked(False)
                             m_radio.setText(m)
-                            m_radio.setGeometry(0, 0, 150, 40)
+                            m_radio.setGeometry(0, 0, 140, 40)
                             m_radio.setFont(font)
                             m_price = QLabel(m_widget)
-                            m_price.setGeometry(170, 0, 40, 40)
+                            m_price.setGeometry(155, 0, 40, 40)
                             m_price.setText(str(m_info[0]))
                             m_price.setFont(font)
                             m_count = QLabel(m_widget)
-                            m_count.setGeometry(230, 0, 40, 40)
+                            m_count.setGeometry(215, 0, 20, 40)
                             m_count.setText(str(m_info[1]))
                             m_count.setFont(font)
                             f_layout.addWidget(m_widget, 0)
@@ -109,17 +108,17 @@ class Add:
                 self.clear_layout(d_layout)
                 for d in data:
                     d_widget = QWidget()
-                    d_widget.setFixedSize(300, 40)
+                    d_widget.setFixedSize(235, 40)
                     d_radio = QRadioButton(d_widget)
                     d_radio.setText(d[0])
-                    d_radio.setGeometry(0, 0, 150, 40)
+                    d_radio.setGeometry(0, 0, 140, 40)
                     d_radio.setFont(font)
                     d_price = QLabel(d_widget)
-                    d_price.setGeometry(170, 0, 40, 40)
+                    d_price.setGeometry(155, 0, 40, 40)
                     d_price.setText(str(d[1]))
                     d_price.setFont(font)
                     d_count = QLabel(d_widget)
-                    d_count.setGeometry(230, 0, 40, 40)
+                    d_count.setGeometry(215, 0, 20, 40)
                     d_count.setText(str(d[2]))
                     d_count.setFont(font)
                     d_layout.addWidget(d_widget, 0)
@@ -127,18 +126,18 @@ class Add:
                         count_dict["d"][d[0]] = {"info":[d[1], d[2]], "ppl":{}}
                     count_dict["d"][d[0]]["ppl"][ppl] = d_radio
 
-    def count(self, ppl_pay, layout):
+    def count(self, ppl_pay, discount, layout):
         global count_dict
         if not count_dict or count_dict == {"f":{}, "d":{}}:
             return
         money_dict = {}
         money_text = {}
-        ppl = ppl_pay.keys()
+        ppl = list(ppl_pay.keys()).copy()
         try:
             for p in ppl:
                 money_dict[p] = []
                 money_text[p] = {"f":["\t食事："], "d":["\t酒水："]}
-                how_much = ppl_pay[p].toPlainText()
+                how_much = ppl_pay[p].text()
                 if how_much == "":
                     how_much = 0
                 pay = int(how_much) * -1
@@ -178,43 +177,62 @@ class Add:
                     if count_dict["d"][d]["ppl"][pp].isChecked():
                         money_dict[pp].append(d_per_ppl)
                         money_text[pp]["d"].append(f"\t\t{d_price * d_c} / {drink_count} = {round(d_per_ppl, 4)}")
-            self.count_text(money_dict, money_text, layout)
+            for p in ppl:
+                if len(money_dict[p]) <= 1:
+                    del money_dict[p]
+                    del money_text[p]
+            self.count_text(money_dict, money_text, discount, layout)
         except ValueError:
             self.alert.alert_text("值輸入錯誤")
             return
         
-    def count_text(self, dict, text_dict, layout):
-        ppl = dict.keys()
+    def count_text(self, money_dict, money_text, discount, layout):
         self.clear_layout(layout)
-        for p in ppl:
-            money_list = dict[p]
+        ppl_count = len(money_dict)
+        if discount != "0":
+            dis_per_ppl = (float(discount) / ppl_count) * (-1)
+        for p in money_dict.keys():
+            money_list = money_dict[p]
             money = sum(money_list)
-            money = int(money) + (money > int(money))
-            money_total_text = QLabel()
-            money_total_text.setFixedSize(370, 17)
-            money_total_text.setText(f"{p}：{str(money)}")
             money_item_scroll = QScrollArea()
             money_item_scroll.setFixedSize(410, 130)
             money_item_scroll.setWidgetResizable(True)
-            money_item_scroll.setFrameShape(QFrame.NoFrame)
+            #money_item_scroll.setFrameShape(QFrame.NoFrame)
             money_item_area = QWidget()
             money_item_scroll.setWidget(money_item_area)
             money_item_layout = QVBoxLayout()
             money_item_area.setLayout(money_item_layout)
             money_item_layout.setSizeConstraint(QVBoxLayout.SetMinAndMaxSize)
-            f_text_list = text_dict[p]["f"]
+            money_total_text = QLabel()
+            money_total_text.setFixedSize(370, 17)
+            if "dis_per_ppl" in locals():
+                money += dis_per_ppl
+                money = int(money) + (money > int(money))
+                money_total_text.setText(f"{p}：{str(money)}")
+                layout.addWidget(money_total_text)
+                discount_title =QLabel("\t折扣")
+                discount_title.setFixedSize(370, 17)
+                discount_text =QLabel(f"\t\t{float(discount) * (-1)} / {ppl_count} = {round(dis_per_ppl, 4)}")
+                discount_text.setFixedSize(370, 17)
+                money_item_layout.addWidget(discount_title)
+                money_item_layout.addWidget(discount_text)
+            else:
+                money = int(money) + (money > int(money))
+                money_total_text.setText(f"{p}：{str(money)}")
+                layout.addWidget(money_total_text)
+            
+            f_text_list = money_text[p]["f"]
             if len(f_text_list) > 1:
                 for m_row in f_text_list:
                     f_money_item =QLabel(m_row)
                     f_money_item.setFixedSize(370, 17)
                     money_item_layout.addWidget(f_money_item)
-            d_text_list = text_dict[p]["d"]
+            d_text_list = money_text[p]["d"]
             if len(d_text_list) > 1:
                 for d_row in d_text_list:
                     d_money_item =QLabel(d_row)
                     d_money_item.setFixedSize(370, 17)
                     money_item_layout.addWidget(d_money_item)
-            layout.addWidget(money_total_text)
             layout.addWidget(money_item_scroll)
 
     def clear_layout(self, layout):
