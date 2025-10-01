@@ -1,5 +1,6 @@
-from PySide6.QtWidgets import QWidget, QRadioButton, QLabel, QScrollArea, QVBoxLayout, QFrame
+from PySide6.QtWidgets import QWidget, QRadioButton, QLabel, QScrollArea, QVBoxLayout, QFrame, QLineEdit
 from PySide6.QtGui import QFont
+from PySide6.QtCore import Qt
 from alert import Alert
 
 # Count how many dishes：food_count_dict：{Type:{Meal:[button, price, count]}}
@@ -93,14 +94,16 @@ class Add:
                             m_price.setGeometry(155, 0, 40, 40)
                             m_price.setText(str(m_info[0]))
                             m_price.setFont(font)
-                            m_count = QLabel(m_widget)
+                            m_count = QLineEdit(m_widget)
+                            m_count.setStyleSheet("border: 1px solid gray")
+                            m_count.setAlignment(Qt.AlignCenter)
                             m_count.setGeometry(215, 0, 20, 40)
                             m_count.setText(str(m_info[1]))
                             m_count.setFont(font)
                             f_layout.addWidget(m_widget, 0)
                             if m not in count_dict["f"].keys():
                                 count_dict["f"][m] = {"info":[m_info[0], m_info[1]], "ppl":{}}
-                            count_dict["f"][m]["ppl"][ppl] = m_radio
+                            count_dict["f"][m]["ppl"][ppl] = (m_radio, m_count)
         elif layout_type == "d":
             count_dict["d"] = {}
             for ppl in ppl_list:
@@ -117,14 +120,16 @@ class Add:
                     d_price.setGeometry(155, 0, 40, 40)
                     d_price.setText(str(d[1]))
                     d_price.setFont(font)
-                    d_count = QLabel(d_widget)
+                    d_count = QLineEdit(d_widget)
+                    d_count.setStyleSheet("border: 1px solid gray")
+                    d_count.setAlignment(Qt.AlignCenter)
                     d_count.setGeometry(215, 0, 20, 40)
-                    d_count.setText(str(d[2]))
+                    d_count.setText("1")
                     d_count.setFont(font)
                     d_layout.addWidget(d_widget, 0)
                     if d[0] not in count_dict["d"].keys():
                         count_dict["d"][d[0]] = {"info":[d[1], d[2]], "ppl":{}}
-                    count_dict["d"][d[0]]["ppl"][ppl] = d_radio
+                    count_dict["d"][d[0]]["ppl"][ppl] = (d_radio, d_count)
 
     def count(self, ppl_pay, discount, layout):
         global count_dict
@@ -144,39 +149,59 @@ class Add:
                 money_dict[p].append(pay)
             meals = count_dict["f"].keys()
             for m in meals:
-                eat_count = 0
                 f_price = int(count_dict["f"][m]["info"][0])
                 f_c = int(count_dict["f"][m]["info"][1])
+                eat_count = [0] * f_c
                 for pp in ppl:
-                    if count_dict["f"][m]["ppl"][pp].isChecked():
-                        eat_count += 1
-                if eat_count == 0:
-                    self.alert.alert_text(f"{m}未被選取")
-                    return
-                m_per_ppl = (f_price * f_c) / eat_count
-                for pp in ppl:
-                    if count_dict["f"][m]["ppl"][pp].isChecked():
-                        money_dict[pp].append(m_per_ppl)
-                        money_text[pp]["f"].append(f"\t\t{m}： {f_price * f_c} / {eat_count} = {round(m_per_ppl, 4)}")
+                    if count_dict["f"][m]["ppl"][pp][0].isChecked():
+                        for cc in range(int(count_dict["f"][m]["ppl"][pp][1].text())):
+                            eat_count[cc] += 1
+                eat_count_check = list(set(eat_count))
+                if len(eat_count_check) == 1:
+                    if eat_count_check[0] == 0:
+                        self.alert.alert_text(f"{m}未被選取")
+                        return
+                    else:
+                        m_per_ppl = (f_price * f_c) / eat_count[0]
+                        for pp in ppl:
+                            if count_dict["f"][m]["ppl"][pp][0].isChecked():
+                                money_dict[pp].append(m_per_ppl)
+                                money_text[pp]["f"].append(f"\t\t{m}： {f_price * f_c} / {eat_count[0]} = {round(m_per_ppl, 4)}")
+                else:
+                    for pp in ppl:
+                        if count_dict["f"][m]["ppl"][pp][0].isChecked():
+                            f_eq = []
+                            f_value = []
+                            for cc in range(int(count_dict["f"][m]["ppl"][pp][1].text())):
+                                m_per_ppl = (f_price) / eat_count[cc]
+                                money_dict[pp].append(m_per_ppl)
+                                f_eq.append(f"{f_price * f_c} / {eat_count[cc]}")
+                                f_value.append(f"{round(m_per_ppl, 4)}")
+                            money_text[pp]["f"].append(f"\t\t{m}： " + " + ".join(f_eq) + " = " + " + ".join(f_value))
             drinks = count_dict["d"].keys()
             for d in drinks:
-                drink_count = 0
+                drink_count = {}
                 d_price = int(count_dict["d"][d]["info"][0])
                 d_c = int(count_dict["d"][d]["info"][1])
                 for pp in ppl:
-                    if count_dict["d"][d]["ppl"][pp].isChecked():
-                        drink_count += 1
-                if drink_count == 0:
+                    if count_dict["d"][d]["ppl"][pp][0].isChecked():
+                        if int(count_dict["d"][d]["ppl"][pp][1].text()) != 0:
+                            drink_count[pp] = int(count_dict["d"][d]["ppl"][pp][1].text())
+                if drink_count:
+                    if sum(drink_count.values()) == 0:
+                        self.alert.alert_text(f"{d}未被選取")
+                        return
+                    elif sum(drink_count.values()) > d_c:
+                        self.alert.alert_text(f"{d}選取超過杯數")
+                        return
+                    for pp in ppl:
+                        if pp in drink_count:
+                            d_per_ppl = d_price * drink_count[pp]
+                            if count_dict["d"][d]["ppl"][pp][0].isChecked():
+                                money_dict[pp].append(d_per_ppl)
+                                money_text[pp]["d"].append(f"\t\t{d_price} * {drink_count[pp]} = {round(d_per_ppl, 4)}")
+                else:
                     self.alert.alert_text(f"{d}未被選取")
-                    return
-                elif drink_count > d_c:
-                    self.alert.alert_text(f"{d}選取超過杯數")
-                    return
-                d_per_ppl = (d_price * d_c) / drink_count
-                for pp in ppl:
-                    if count_dict["d"][d]["ppl"][pp].isChecked():
-                        money_dict[pp].append(d_per_ppl)
-                        money_text[pp]["d"].append(f"\t\t{d_price * d_c} / {drink_count} = {round(d_per_ppl, 4)}")
             for p in ppl:
                 if len(money_dict[p]) <= 1:
                     del money_dict[p]
