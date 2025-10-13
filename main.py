@@ -1,5 +1,5 @@
-from PySide6.QtWidgets import QApplication, QScrollArea, QTabWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QRadioButton, QPushButton, QLineEdit, QCompleter, QFrame
-from PySide6.QtCore import Qt, QObject, QEvent, QTimer
+from PySide6.QtWidgets import QApplication, QScrollArea, QTabWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QRadioButton, QPushButton, QLineEdit, QCompleter, QMessageBox
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont, QIcon, QPixmap, QImage
 import base64
 from PIL import Image
@@ -8,6 +8,7 @@ from food import Food
 from icon.add import add_image_base64
 from button_function import Add
 from functools import partial
+from datetime import datetime
 
 class MainWindow(QScrollArea):
     def __init__(self):
@@ -306,10 +307,16 @@ class MainWindow(QScrollArea):
             self.ppl_layout[ppl] = [f_option_layout, d_option_layout]
             selected_all.clicked.connect(partial(self.selected_all, f_option_layout))
 
-    # Count_How_Much
-        money_area = QWidget(self.money_tab)
-        money_area.setGeometry(0, 60, 600, 760)
-        self.money_frant = QVBoxLayout(money_area)
+    # Count How Much
+        money_page = QWidget(self.money_tab)
+        money_page.setGeometry(0, 60, 600, 760)
+        money_page.setStyleSheet("border:none")
+        money_scroll = QScrollArea(money_page)
+        money_scroll.setFixedSize(600, 760)
+        money_scroll.setWidgetResizable(True)
+        money_area = QWidget()
+        money_scroll.setWidget(money_area)
+        self.money_frant = QVBoxLayout()
         self.money_frant.setSizeConstraint(QVBoxLayout.SetMinAndMaxSize)
         discount_label = QLabel("折扣", self.money_tab)
         discount_label.setGeometry(10, 25, 40, 30)
@@ -317,9 +324,18 @@ class MainWindow(QScrollArea):
         discount_box.setText(str(0))
         discount_box.setGeometry(80, 25, 100, 30)
         money_button = QPushButton(self.money_tab)
-        money_button.clicked.connect(lambda:self.count_final(self.ppl_pay, discount_box.text(), self.money_frant))
+        money_button.clicked.connect(lambda:self.add_class.count(self.ppl_pay, discount_box.text(), self.money_frant))
         money_button.setText("計算")
         money_button.setGeometry(450, 20, 100, 40)
+        copy_button = QPushButton(self.money_tab)
+        copy_button.clicked.connect(self.copy_result)
+        copy_button.setText("複製金額")
+        copy_button.setGeometry(450, 80, 100, 40)
+        output_button = QPushButton(self.money_tab)
+        output_button.clicked.connect(self.output_result)
+        output_button.setText("輸出明細")
+        output_button.setGeometry(450, 140, 100, 40)
+        money_area.setLayout(self.money_frant)
 
     def food_search_option(self):
         keyword = self.food_searchbox.text().strip()
@@ -360,7 +376,7 @@ class MainWindow(QScrollArea):
         timer.timeout.connect(toggle_border)
         timer.start(500)
 
-        # 2 秒後停止閃爍並恢復原狀
+        # Light two sec
         QTimer.singleShot(3000, lambda: (timer.stop(), widget.setStyleSheet(default_style)))
 
     def add_food_row(self):
@@ -411,15 +427,35 @@ class MainWindow(QScrollArea):
 
     def selected_all(self, layout):
         for index in range(layout.count()):
-            item = layout.itemAt(index)  # 取得該索引位置的部件
-            widget = item.widget()  # 取得部件（如 QWidget
+            item = layout.itemAt(index)
+            widget = item.widget()
             if widget:
-                radio_button = widget.findChild(QRadioButton)  # 查找 QWidget 內的 QRadioButton
+                radio_button = widget.findChild(QRadioButton)
                 if radio_button:
                     radio_button.setChecked(True)
 
     def count_final(self, ppl_pay, discount, layout):
         self.add_class.count(ppl_pay, discount, layout)
+
+    def copy_result(self):
+        if self.add_class.start_func:
+            copy_list = self.add_class.copy_list
+            copy_text = "\n".join(copy_list)
+            clipboard = QApplication.clipboard()
+            clipboard.setText(copy_text)
+
+    def output_result(self):
+        if self.add_class.start_func:
+            today = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
+            with open(f"輸出 {today}.txt", "w", encoding="utf-8") as f:
+                for ppl in self.add_class.money_text:
+                    f.write("\n")
+                    f.write(ppl)
+                    for type in self.add_class.money_text[ppl]:
+                        for money_row in self.add_class.money_text[ppl][type]:
+                            f.write("\n")
+                            f.write(money_row)
+            QMessageBox.information(self, "提示", "輸出完成")
 
 if __name__ == "__main__":
     import sys
